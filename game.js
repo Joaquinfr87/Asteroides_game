@@ -1,6 +1,7 @@
 let canva = document.getElementById("juegoCanva");
 let ctx = canva.getContext("2d");
 
+const SAVE_KEY_SCORE = "highscore";// save key de highscore
 const ASTEROIDES_PUNTS_BIG = 20;
 const ASTEROIDES_PUNTS_MED = 20;
 const ASTEROIDES_PUNTS_SMA = 20;
@@ -25,10 +26,68 @@ const BLINK_DUR = 0.1;
 const SHIP_EXPLOTE_DUR = 0.3; // duracion de la explision
 const TEXT_FADE_TIEMP = 2.5; // tiempo de desaparacion del texto
 const TEXT_SIZE = 40; // tamano del texto
+const SOUNDS_ON = true; // habilitado los sonidos
+const MUSIC_ON = false;
 
-let level, asteroides, ship, text, textAlpha, vidas, score;
+let level, asteroides, ship, text, textAlpha, vidas, score, highscore;
 
+//estableces los sonidos 
+let fxExplode = new Sound("./sounds/explode.m4a");
+let fxLaser = new Sound("./sounds/laser.m4a", 5, 0.5);
+let fxHit = new Sound("./sounds/hit.m4a", 5)
+let fxThrust = new Sound("./sounds/thrust.m4a")
+// establecer la musica
+let music = new Music("./sounds/music-low.m4a", "./sounds/music-high.m4a")
+let asteroidesTotal, asteroidesQuedan;
 nuevoJuego();
+
+function Music(srcLow, srchHigh) {
+  this.soundLow = new Audio(srcLow);
+  this.soundHigh = new Audio(srchHigh);
+  this.low = true;
+  this.tempo = 1.0; // segundos por beat
+  this.beatTime = 0;
+  this.play = function () {
+    if (MUSIC_ON) {
+      if (this.low) {
+        this.soundLow.play();
+      } else {
+        this.soundHigh.play();
+      }
+      this.low = !this.low;
+    }
+  }
+  this.setAsteroidRatio = function(ratio){
+    this.tempo = 1.0 - 0.75 * (1.0 - ratio);
+  }
+  this.tick = function () {
+    if (this.beatTime == 0) {
+      this.play();
+      this.beatTime = Math.ceil(this.tempo * FPS);
+    } else {
+      this.beatTime--;
+    }
+  }
+}
+
+function Sound(src, maxStreams = 1, vol = 1.0) {
+  this.streamNum = 0;
+  this.streams = [];
+  for (let i = 0; i < maxStreams; i++) {
+    this.streams.push(new Audio(src));
+    this.streams[i].volume = vol;
+  }
+  this.play = function () {
+    if (SOUNDS_ON) {
+      this.streamNum = (this.streamNum + 1) % maxStreams;
+      this.streams[this.streamNum].play();
+    }
+  }
+  this.stop = function () {
+    this.streams[this.streamNum].pause();
+    this.streams[this.streamNum].currentTime = 0;
+  }
+}
 
 function newShip() {
   return {
@@ -64,18 +123,26 @@ function dispararLaser() {
         tiempoExplosion: 0,
       }
     )
+    fxLaser.play();
   }
   ship.puedeDisparar = false;
 
 }
 
 function nuevoJuego() {
-  level = 20;
+  //obejtener el puntaje mas alto 
+
+  let tempScore = localStorage.getItem(SAVE_KEY_SCORE);
+  if (tempScore == null) {
+    highscore = 0;
+  } else { highscore = parseInt(tempScore) }
+  level = 0;
   score = 0;
   vidas = JUEGO_VIDAS;
   ship = newShip();
   asteroides = [];
   nuevoNivel();
+
 }
 function nuevoNivel() {
   text = "Nivel " + (level + 1);
@@ -86,6 +153,8 @@ function nuevoNivel() {
 
 function createAsteroidsBelt() {
   asteroides = [];
+  asteroidesTotal = (ASTEROIDES_NUM + level) * 7;
+  asteroidesQuedan = asteroidesTotal 
   let x, y;
   for (let i = 0; i < ASTEROIDES_NUM + level * 2; i++) {
     do {
@@ -113,10 +182,19 @@ function destruirAsteroide(i) {
   } else {
     score += ASTEROIDES_PUNTS_SMA;
   }
+  //check highscore
+  if (score > highscore) {
+    highscore = score
+    localStorage.setItem(SAVE_KEY_SCORE, highscore);
+  }
 
   // eliminar asteroide original
   asteroides.splice(i, 1);
+  fxHit.play();
 
+  // calcular el ratio de los asteroide para determinar el tempo de la musica
+  asteroidesQuedan--;
+  music.setAsteroidRatio(asteroidesQuedan==0?1:asteroidesQuedan/asteroidesTotal);
   //nuevo nivel cuando no hay mas asteroides
   if (asteroides.length == 0) {
     level++;
@@ -149,6 +227,7 @@ function dibujarNave(x, y, a, color = "white") {
 
 function explotarNave() {
   ship.tiempoExplosion = Math.ceil(SHIP_EXPLOTE_DUR * FPS);
+  fxExplode.play();
 }
 
 function gameOver() {
@@ -227,6 +306,9 @@ function keyUp(e) {
 function update() {
   let explotando = ship.tiempoExplosion > 0;
   let blinkOn = ship.blinkNumber % 2 == 0;
+
+  //tick music
+  music.tick();
   //dibujo del espacio 
   ctx.fillStyle = "black";
   ctx.fillRect(0, 0, canva.width, canva.height);
@@ -347,6 +429,7 @@ function update() {
   if (ship.empujando && !ship.dead) {
     ship.empuje.x += SHIP_EMPUJE * Math.cos(ship.a) / FPS;
     ship.empuje.y -= SHIP_EMPUJE * Math.sin(ship.a) / FPS;
+    fxThrust.play();
     // DIBUJAR EMPUJE DETRÁS DE LA NAVE
     if (!explotando) {
       ctx.beginPath();
@@ -380,6 +463,7 @@ function update() {
   } else {
     ship.empuje.x -= FRICCION * ship.empuje.x / FPS;
     ship.empuje.y -= FRICCION * ship.empuje.y / FPS;
+    fxThrust.stop();
   }
 
   //manejar el borde de la pantalla
@@ -493,8 +577,15 @@ function update() {
   ctx.textAlign = "right";
   ctx.textBaseLine = "middle";
   ctx.fillStyle = "white";
-  ctx.font =  TEXT_SIZE + "px dejavu sans mono"
-  ctx.fillText(score, canva.width - SHIP_SIZE/2, SHIP_SIZE);
+  ctx.font = TEXT_SIZE + "px dejavu sans mono"
+  ctx.fillText(score, canva.width - SHIP_SIZE / 2, SHIP_SIZE);
+
+  //dibujar highscore
+  ctx.textAlign = "center";
+  ctx.textBaseLine = "middle";
+  ctx.fillStyle = "white";
+  ctx.font = (TEXT_SIZE * 0.75) + "px dejavu sans mono"
+  ctx.fillText("MEJOR: " + highscore, canva.width / 2, SHIP_SIZE);
 
   // dibujar las vidad 
   let vidaColor;
