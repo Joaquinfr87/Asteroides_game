@@ -1,6 +1,10 @@
 let canva = document.getElementById("juegoCanva");
 let ctx = canva.getContext("2d");
 
+const ASTEROIDES_PUNTS_BIG = 20;
+const ASTEROIDES_PUNTS_MED = 20;
+const ASTEROIDES_PUNTS_SMA = 20;
+const JUEGO_VIDAS = 3;// numero inicial de vidas
 const LASER_EXPLODE_DUR = 0.1;//duracion de la explision de asteroides
 const LASER_DIST = 0.6; // distancia maxima que un laser pueda viajar en relacion con la el ancho
 const LASER_MAX = 10;//maximo de laseres en el juego al mismo tiempo
@@ -10,16 +14,22 @@ const SHIP_SIZE = 30; // pixeles altura
 const TURN_SPEED = 360; // giro de la nave en grados por segundo
 const SHIP_EMPUJE = 5; // aceleracion de la nave por pixeles por segundo por segundo 
 const FRICCION = 0.7;// coeficiente de friccion
-const ASTEROIDES_NUM = 10;// numero inicial de asteroides
+const ASTEROIDES_NUM = 1;// numero inicial de asteroides
 const ASTEROIDES_SPEED = 50;
 const ASTEROIDES_SIZE = 100;
 const ASTEROIDES_VERT = 10;//numero random de vertices
 const ASTEROIDES_BORDE = 0.3; //constante de borde dentado de los asteroides 0 ninguno 1 mucho
-const SHOW_ALREDEDOR = true;
+const SHOW_ALREDEDOR = false;
 const INVULNERABILIDAD_TIEMP = 3;// 3 segundos
 const BLINK_DUR = 0.1;
 const SHIP_EXPLOTE_DUR = 0.3; // duracion de la explision
-let ship = newShip();
+const TEXT_FADE_TIEMP = 2.5; // tiempo de desaparacion del texto
+const TEXT_SIZE = 40; // tamano del texto
+
+let level, asteroides, ship, text, textAlpha, vidas, score;
+
+nuevoJuego();
+
 function newShip() {
   return {
     x: canva.width / 2,
@@ -36,7 +46,8 @@ function newShip() {
     blinkTiempo: Math.ceil(BLINK_DUR * FPS),
     blinkNumber: Math.ceil(INVULNERABILIDAD_TIEMP / BLINK_DUR),
     puedeDisparar: true,
-    lasers: []
+    lasers: [],
+    dead: false,
 
   }
 }
@@ -58,13 +69,25 @@ function dispararLaser() {
 
 }
 
-let asteroides = [];
-createAsteroidsBelt();
+function nuevoJuego() {
+  level = 20;
+  score = 0;
+  vidas = JUEGO_VIDAS;
+  ship = newShip();
+  asteroides = [];
+  nuevoNivel();
+}
+function nuevoNivel() {
+  text = "Nivel " + (level + 1);
+  textAlpha = 1.0;
+  createAsteroidsBelt();
+
+}
 
 function createAsteroidsBelt() {
   asteroides = [];
   let x, y;
-  for (let i = 0; i < ASTEROIDES_NUM; i++) {
+  for (let i = 0; i < ASTEROIDES_NUM + level * 2; i++) {
     do {
       x = Math.floor(Math.random() * canva.width);
       y = Math.floor(Math.random() * canva.height);
@@ -80,30 +103,67 @@ function destruirAsteroide(i) {
   if (a.r === Math.ceil(ASTEROIDES_SIZE / 2)) {
     asteroides.push(nuevoAsteroide(a.x, a.y, Math.ceil(ASTEROIDES_SIZE / 4)));
     asteroides.push(nuevoAsteroide(a.x, a.y, Math.ceil(ASTEROIDES_SIZE / 4)));
+    score += ASTEROIDES_PUNTS_BIG;
   }
   // tamaño mediano → dividir a pequeños
   else if (a.r === Math.ceil(ASTEROIDES_SIZE / 4)) {
     asteroides.push(nuevoAsteroide(a.x, a.y, Math.ceil(ASTEROIDES_SIZE / 8)));
     asteroides.push(nuevoAsteroide(a.x, a.y, Math.ceil(ASTEROIDES_SIZE / 8)));
+    score += ASTEROIDES_PUNTS_MED;
+  } else {
+    score += ASTEROIDES_PUNTS_SMA;
   }
 
   // eliminar asteroide original
   asteroides.splice(i, 1);
+
+  //nuevo nivel cuando no hay mas asteroides
+  if (asteroides.length == 0) {
+    level++;
+    nuevoNivel();
+  }
 }
 function distanceEntrePuntos(x1, y1, x2, y2) {
   return Math.sqrt(Math.pow(x2 - x1, 2) + Math.pow(y2 - y1, 2))
+}
+function dibujarNave(x, y, a, color = "white") {
+  ctx.strokeStyle = color;
+  ctx.lineWidth = SHIP_SIZE / 20;
+  ctx.beginPath();
+  ctx.moveTo(//nariz de la nave
+    x + ship.r * Math.cos(a),
+    y - ship.r * Math.sin(a)
+  );
+  ctx.lineTo(
+    x - ship.r * (Math.cos(a) + Math.sin(a)),
+    y + ship.r * (Math.sin(a) - Math.cos(a))
+  );
+  ctx.lineTo(
+    x - ship.r * (Math.cos(a) - Math.sin(a)),
+    y + ship.r * (Math.sin(a) + Math.cos(a))
+  );
+  ctx.closePath();
+  ctx.stroke();
+
 }
 
 function explotarNave() {
   ship.tiempoExplosion = Math.ceil(SHIP_EXPLOTE_DUR * FPS);
 }
 
+function gameOver() {
+  ship.dead = true;
+  text = "GAME OVER"
+  textAlpha = 1.0;
+}
+
 function nuevoAsteroide(x, y, r) {
+  let nivelMultiplicador = 1 + 0.1 * level;
   let asteroide = {
     x: x,
     y: y,
-    xv: Math.random() * ASTEROIDES_SPEED / FPS * (Math.random() < 0.05 ? 1 : -1),
-    yv: Math.random() * ASTEROIDES_SPEED / FPS * (Math.random() < 0.05 ? 1 : -1),
+    xv: Math.random() * ASTEROIDES_SPEED * nivelMultiplicador / FPS * (Math.random() < 0.05 ? 1 : -1),
+    yv: Math.random() * ASTEROIDES_SPEED * nivelMultiplicador / FPS * (Math.random() < 0.05 ? 1 : -1),
     r: r,
     a: Math.random() * Math.PI * 2,
     vert: Math.floor(Math.random() * (ASTEROIDES_VERT + 1) + ASTEROIDES_VERT / 2),
@@ -125,6 +185,9 @@ setInterval(update, 1000 / FPS); // 1000 significa 1 segundo y por lo tanto lo
 
 
 function keyDown(e) {
+  if (ship.dead) {
+    return;
+  }
   switch (e.keyCode) {
     case 37:// rotar nave a la izquierda
       ship.rot = TURN_SPEED / 180 * Math.PI / FPS;
@@ -142,6 +205,9 @@ function keyDown(e) {
   }
 }
 function keyUp(e) {
+  if (ship.dead) {
+    return;
+  }
   switch (e.keyCode) {
     case 37:// rotar nave a la izquierda
       ship.rot = 0;
@@ -168,26 +234,8 @@ function update() {
   //dibujo de la nave
 
   if (!explotando) {
-    if (blinkOn) {
-
-
-      ctx.strokeStyle = "white";
-      ctx.lineWidth = SHIP_SIZE / 20;
-      ctx.beginPath();
-      ctx.moveTo(//nariz de la nave
-        ship.x + ship.r * Math.cos(ship.a),
-        ship.y - ship.r * Math.sin(ship.a)
-      );
-      ctx.lineTo(
-        ship.x - ship.r * (Math.cos(ship.a) + Math.sin(ship.a)),
-        ship.y + ship.r * (Math.sin(ship.a) - Math.cos(ship.a))
-      );
-      ctx.lineTo(
-        ship.x - ship.r * (Math.cos(ship.a) - Math.sin(ship.a)),
-        ship.y + ship.r * (Math.sin(ship.a) + Math.cos(ship.a))
-      );
-      ctx.closePath();
-      ctx.stroke();
+    if (blinkOn && !ship.dead) {
+      dibujarNave(ship.x, ship.y, ship.a);
     }
     if (ship.blinkNumber > 0) {
       ship.blinkTiempo--;
@@ -230,9 +278,11 @@ function update() {
   for (let i = 0; i < asteroides.length; i++) {
     const e = asteroides[i];
 
-    if (distanceEntrePuntos(ship.x, ship.y, e.x, e.y) < ship.r + e.r) {
+    // Ignorar colisiones si la nave está explotando o si está en período de invulnerabilidad (parpadeando)
+    if (!explotando && ship.blinkNumber === 0 && !ship.dead &&
+      distanceEntrePuntos(ship.x, ship.y, e.x, e.y) < ship.r + e.r) {
       explotarNave();
-      destruirAsteroide(i); // ✔ PASA EL ÍNDICE
+      destruirAsteroide(i);
       break;
     }
   }
@@ -294,7 +344,7 @@ function update() {
   ship.a += ship.rot;
 
   //empuje de la nave
-  if (ship.empujando) {
+  if (ship.empujando && !ship.dead) {
     ship.empuje.x += SHIP_EMPUJE * Math.cos(ship.a) / FPS;
     ship.empuje.y -= SHIP_EMPUJE * Math.sin(ship.a) / FPS;
     // DIBUJAR EMPUJE DETRÁS DE LA NAVE
@@ -350,7 +400,12 @@ function update() {
   } else {
     ship.tiempoExplosion--;
     if (ship.tiempoExplosion == 0) {
-      ship = newShip();
+      vidas--;
+      if (vidas == 0) {
+        gameOver();
+      } else {
+        ship = newShip();
+      }
     }
   }
   //dibujar los asteroides
@@ -422,5 +477,29 @@ function update() {
         break;
       }
     }
+  }
+  // dibujat el texto del nivel
+  if (textAlpha >= 0) {
+    ctx.textAlign = "center";
+    ctx.textBaseLine = "middle";
+    ctx.fillStyle = "rgba(255,255,255," + textAlpha + ")"
+    ctx.font = "small-caps " + TEXT_SIZE + "px dejavu sans mono"
+    ctx.fillText(text, canva.width / 2, canva.height * 3 / 4);
+    textAlpha -= (1.0 / TEXT_FADE_TIEMP / FPS);
+  } else if (ship.dead) {
+    nuevoJuego()
+  }
+  //dibujar el score
+  ctx.textAlign = "right";
+  ctx.textBaseLine = "middle";
+  ctx.fillStyle = "white";
+  ctx.font =  TEXT_SIZE + "px dejavu sans mono"
+  ctx.fillText(score, canva.width - SHIP_SIZE/2, SHIP_SIZE);
+
+  // dibujar las vidad 
+  let vidaColor;
+  for (let i = 0; i < vidas; i++) {
+    vidaColor = explotando && i == vidas ? "red" : "white";
+    dibujarNave(SHIP_SIZE + i * SHIP_SIZE * 1.2, SHIP_SIZE, Math.PI / 2, vidaColor);
   }
 }
