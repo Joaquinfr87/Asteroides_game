@@ -1,13 +1,89 @@
 <!DOCTYPE html>
- <html lang="en">
-   <head>
-     <meta charset="UTF-8">
-     <meta name="viewport" content="width=device-width, initial-scale=1">
-     <title></title>
-     <link href="css/style.css" rel="stylesheet">
+<html lang="es">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Asteroides</title>
+    <link href="css/style.css" rel="stylesheet" />
+    <script defer>
+      document.addEventListener("DOMContentLoaded", () => {
+        const toggles = document.querySelectorAll(".accordion-toggle");
+        toggles.forEach(toggle => {
+          toggle.addEventListener("click", () => {
+            const content = toggle.nextElementSibling;
+            content.classList.toggle("open");
+            toggle.classList.toggle("active");
+          });
+        });
+      });
+    </script>
     <script src="game.js" defer></script>
-   </head>
-   <body>
-    <<canvas id="juegoCanva" width="1000" height="600"></canvas>
-   </body>
- </html> 
+  </head>
+<body>
+  <div class="contenedor">
+    
+    <div class="panel-izq">
+      <h1>ASTEROIDES</h1>
+
+      <section class="descripcion">
+        <h2>Descripción</h2>
+        <p>
+          Asteroides es un juego clásico donde controlas una nave espacial en un campo de asteroides. 
+          El objetivo es sobrevivir el mayor tiempo posible y destruir los asteroides y naves enemigas
+          para acumular puntos. La pantalla tiene efecto de bucle: al salir por un borde, reapareces en el opuesto.
+        </p>
+      </section>
+
+      <!-- Menú desplegable: Controles -->
+      <button class="accordion-toggle">Controles</button>
+      <div class="accordion-content">
+        <ul>
+          <li><span class="key">↑</span> Impulsar hacia adelante</li>
+          <li><span class="key">←</span> Girar izquierda</li>
+          <li><span class="key">→</span> Girar derecha</li>
+          <li><span class="key">Espacio</span> Disparar</li>
+        </ul>
+      </div>
+
+      <!-- Menú desplegable: Puntaje -->
+      <button class="accordion-toggle">Puntaje</button>
+      <div class="accordion-content">
+        <ul>
+          <li>Asteroide grande: <strong>20 puntos</strong></li>
+          <li>Asteroide mediano: <strong>50 puntos</strong></li>
+          <li>Asteroide pequeño: <strong>100 puntos</strong></li>
+          <li>Nave enemiga: <strong>200 puntos</strong></li>
+        </ul>
+      </div>
+
+      <!-- Menú desplegable: Reglas -->
+      <button class="accordion-toggle">Reglas</button>
+      <div class="accordion-content">
+        <ul>
+          <li>Comienzas con <strong>3 vidas</strong>.</li>
+          <li>Al chocar con un asteroide, pierdes una vida.</li>
+          <li>Los niveles son infinitos y cada vez hay más asteroides.</li>
+          <li>Los asteroides grandes se dividen al dispararlos en medianos, y estos en pequeños.</li>
+          <li>Si la nave sale de la pantalla, reaparece en el borde opuesto.</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="panel-der">
+      <canvas id="juegoCanva" width="1000" height="600"></canvas>
+    </div>
+
+  </div>
+
+  <footer class="footer">
+    <p>Realizado por el <strong>Team Celeron</strong></p>
+    <p>
+      Integrantes:<br>
+      • Joaquin Alessandro Felipez Rojas<br>
+      • Nicolas Sebastian Reguerin Meneses
+    </p>
+    <p>Materia: <strong>Diseño Web II</strong></p>
+  </footer>
+</body>
+</html>
+

@@ -3,8 +3,8 @@ let ctx = canva.getContext("2d");
 
 const SAVE_KEY_SCORE = "highscore";// save key de highscore
 const ASTEROIDES_PUNTS_BIG = 20;
-const ASTEROIDES_PUNTS_MED = 20;
-const ASTEROIDES_PUNTS_SMA = 20;
+const ASTEROIDES_PUNTS_MED = 40;
+const ASTEROIDES_PUNTS_SMA = 60;
 const JUEGO_VIDAS = 3;// numero inicial de vidas
 const LASER_EXPLODE_DUR = 0.1;//duracion de la explision de asteroides
 const LASER_DIST = 0.6; // distancia maxima que un laser pueda viajar en relacion con la el ancho
@@ -30,6 +30,7 @@ const SOUNDS_ON = true; // habilitado los sonidos
 const MUSIC_ON = false;
 
 let level, asteroides, ship, text, textAlpha, vidas, score, highscore;
+let celeron = "TEAM CELERON";
 
 //estableces los sonidos 
 let fxExplode = new Sound("./sounds/explode.m4a");
@@ -57,7 +58,7 @@ function Music(srcLow, srchHigh) {
       this.low = !this.low;
     }
   }
-  this.setAsteroidRatio = function(ratio){
+  this.setAsteroidRatio = function (ratio) {
     this.tempo = 1.0 - 0.75 * (1.0 - ratio);
   }
   this.tick = function () {
@@ -129,6 +130,10 @@ function dispararLaser() {
 
 }
 
+function TeamCeleron() {
+
+}
+
 function nuevoJuego() {
   //obejtener el puntaje mas alto 
 
@@ -141,6 +146,7 @@ function nuevoJuego() {
   vidas = JUEGO_VIDAS;
   ship = newShip();
   asteroides = [];
+  
   nuevoNivel();
 
 }
@@ -154,7 +160,7 @@ function nuevoNivel() {
 function createAsteroidsBelt() {
   asteroides = [];
   asteroidesTotal = (ASTEROIDES_NUM + level) * 7;
-  asteroidesQuedan = asteroidesTotal 
+  asteroidesQuedan = asteroidesTotal
   let x, y;
   for (let i = 0; i < ASTEROIDES_NUM + level * 2; i++) {
     do {
@@ -194,7 +200,7 @@ function destruirAsteroide(i) {
 
   // calcular el ratio de los asteroide para determinar el tempo de la musica
   asteroidesQuedan--;
-  music.setAsteroidRatio(asteroidesQuedan==0?1:asteroidesQuedan/asteroidesTotal);
+  music.setAsteroidRatio(asteroidesQuedan == 0 ? 1 : asteroidesQuedan / asteroidesTotal);
   //nuevo nivel cuando no hay mas asteroides
   if (asteroides.length == 0) {
     level++;
@@ -592,5 +598,16 @@ function update() {
   for (let i = 0; i < vidas; i++) {
     vidaColor = explotando && i == vidas ? "red" : "white";
     dibujarNave(SHIP_SIZE + i * SHIP_SIZE * 1.2, SHIP_SIZE, Math.PI / 2, vidaColor);
+  }
+  //dibujo del texto de TEAM CELERON
+  if (textAlpha >= 0) {
+    ctx.textAlign = "center";
+    ctx.textBaseLine = "middle";
+    ctx.fillStyle = "rgba(255,255,255," + textAlpha + ")"
+    ctx.font = "small-caps " + TEXT_SIZE + "px dejavu sans mono"
+    ctx.fillText(celeron, canva.width / 2, canva.height * 1 / 4);
+    textAlpha -= (1.0 / TEXT_FADE_TIEMP / FPS);
+  } else if (ship.dead) {
+    nuevoJuego()
   }
 }
