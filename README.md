@@ -102,5 +102,3 @@ Asteroides es una recreación mejorada del clásico arcade. Controlas una nave e
 
 ---
 
-## 📂 Estructura del proyecto
-
