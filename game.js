@@ -31,12 +31,18 @@ const MUSIC_ON = false;
 
 let level, asteroides, ship, text, textAlpha, vidas, score, highscore;
 let celeron = "TEAM CELERON";
+// buffs
+let buffs = [];
+let buffActivo = null;
+let tiempoBuffRestante = 0;
 
 //estableces los sonidos 
 let fxExplode = new Sound("./sounds/explode.m4a");
 let fxLaser = new Sound("./sounds/laser.m4a", 5, 0.5);
 let fxHit = new Sound("./sounds/hit.m4a", 5)
 let fxThrust = new Sound("./sounds/thrust.m4a")
+let fxEnemyLaser = new Sound("./sounds/laser.m4a", 3, 0.3);
+
 // establecer la musica
 let music = new Music("./sounds/music-low.m4a", "./sounds/music-high.m4a")
 let asteroidesTotal, asteroidesQuedan;
@@ -136,7 +142,6 @@ function TeamCeleron() {
 
 function nuevoJuego() {
   //obejtener el puntaje mas alto 
-
   let tempScore = localStorage.getItem(SAVE_KEY_SCORE);
   if (tempScore == null) {
     highscore = 0;
@@ -146,15 +151,14 @@ function nuevoJuego() {
   vidas = JUEGO_VIDAS;
   ship = newShip();
   asteroides = [];
-  
+  reiniciarBuffs();
   nuevoNivel();
-
 }
 function nuevoNivel() {
   text = "Nivel " + (level + 1);
   textAlpha = 1.0;
   createAsteroidsBelt();
-
+  generarEnemigosPorNivel(level + 1); 
 }
 
 function createAsteroidsBelt() {
@@ -397,13 +401,24 @@ function update() {
       ctx.fill();
     }
     //evaluar la distancia del laser
-    if (e.dist > LASER_DIST * canva.width) {
+    //-------antes-------
+
+    /*if (e.dist > LASER_DIST * canva.width) {
       ship.lasers.shift()
+    }*/
+
+    //-------despues-------
+    if (e.tiempoExplosion == 0 && e.dist > LASER_DIST * canva.width) {
+    // buscar indice y eliminar
+    let index = ship.lasers.indexOf(e);
+    if (index > -1) {
+      ship.lasers.splice(index, 1);
     }
-
-    if (e.tiempoExplosion > 0) {
+    continue; // saltar el laser
+  }
+    //-------antes-------
+    /*if (e.tiempoExplosion > 0) {
       e.tiempoExplosion--;
-
     } else {
       //movelos los laseres
       e.x += e.xv;
@@ -412,8 +427,28 @@ function update() {
       //calcular la distancia de viajes
       e.dist += Math.sqrt(Math.pow(e.xv, 2) + Math.pow(e.yv, 2));
 
+    }*/
+    //-------despues-------
+    if (e.tiempoExplosion > 0) {
+    e.tiempoExplosion--;
+    // borra el laser al impactar
+    if (e.tiempoExplosion <= 0) {
+      let index = ship.lasers.indexOf(e);
+      if (index > -1) {
+        ship.lasers.splice(index, 1);
+      }
+      continue;
     }
-    if (e.x < 0) {
+  } else {
+    e.x += e.xv;
+    e.y += e.yv;
+
+    //calcular la distancia de viajes
+    e.dist += Math.sqrt(Math.pow(e.xv, 2) + Math.pow(e.yv, 2));
+  }
+
+    //-------antes-------
+    /*if (e.x < 0) {
       e.x = canva.width;
     } else if (e.x > canva.width) {
       e.x = 0;
@@ -422,11 +457,26 @@ function update() {
       e.y = canva.width;
     } else if (e.y > canva.height) {
       e.y = 0;
-    }
+    }*/
 
+    //-------despues-------
+    if (e.tiempoExplosion == 0) {
+    if (e.x < 0) {
+      e.x = canva.width;
+    } else if (e.x > canva.width) {
+      e.x = 0;
+    }
+    if (e.y < 0) {
+      e.y = canva.height; // canva.height en lugar de canva.width
+    } else if (e.y > canva.height) {
+      e.y = 0;
+    }
+    }
 
   }
 
+  actualizarEnemigos();
+  actualizarBuffs();
 
   //rotacion de la nave
   ship.a += ship.rot;
@@ -498,6 +548,10 @@ function update() {
       }
     }
   }
+
+  actualizarEnemigos();
+  actualizarBuffs();
+  
   //dibujar los asteroides
   let x, y, r, a, vert, offs;
   for (let e of asteroides) {
@@ -561,7 +615,7 @@ function update() {
 
         // borrar el asteroide correcto
         u.tiempoExplosion = Math.ceil(LASER_EXPLODE_DUR * FPS);
-        // asteroides.splice(i, 1);
+        /* asteroides.splice(i, 1);*/
 
         destruirAsteroide(i);
         break;

@@ -17,6 +17,8 @@
         });
       });
     </script>
+    <script src="enemigos.js" defer></script>
+    <script src="buffs.js" defer></script>
     <script src="game.js" defer></script>
   </head>
 <body>
@@ -53,6 +55,7 @@
           <li>Asteroide mediano: <strong>50 puntos</strong></li>
           <li>Asteroide pequeño: <strong>100 puntos</strong></li>
           <li>Nave enemiga: <strong>200 puntos</strong></li>
+          <li>Recoger buff de disparo múltiple: <strong>+10 segundos de poder</strong></li>
         </ul>
       </div>
 
@@ -65,6 +68,37 @@
           <li>Los niveles son infinitos y cada vez hay más asteroides.</li>
           <li>Los asteroides grandes se dividen al dispararlos en medianos, y estos en pequeños.</li>
           <li>Si la nave sale de la pantalla, reaparece en el borde opuesto.</li>
+          <li>Aparecen <strong>naves enemigas</strong> desde el nivel 3, con comportamientos inteligentes.</li>
+          <li>Las naves enemigas tienen <strong>3 puntos de vida</strong> y esquivan asteroides.</li>
+          <li>Aparecen <strong>buffs de disparo múltiple</strong> que otorgan 10 segundos de poder.</li>
+          <li>Durante el buff de disparo múltiple, disparas en 8 direcciones simultáneamente.</li>
+          <li>Tienes <strong>inmunidad temporal</strong> después de perder una vida.</li>
+        </ul>
+      </div>
+
+      <!-- Menú desplegable: Buffs -->
+      <button class="accordion-toggle">Buffs</button>
+      <div class="accordion-content">
+        <ul>
+          <li><strong>Disparo Múltiple:</strong> Aparece como un orbe brillante con efectos de energía</li>
+          <li><strong>Duración:</strong> 10 segundos</li>
+          <li><strong>Efecto:</strong> Disparas en 8 direcciones simultáneamente</li>
+          <li><strong>Recolección:</strong> Al pasar sobre el buff con tu nave</li>
+          <li>El tiempo restante se muestra sobre tu nave durante el efecto</li>
+        </ul>
+      </div>
+
+      <!-- Menú desplegable: Enemigos -->
+      <button class="accordion-toggle">Enemigos</button>
+      <div class="accordion-content">
+        <ul>
+          <li><strong>Aparecen desde el nivel 3</strong> y aumentan con cada nivel</li>
+          <li><strong>Comportamientos inteligentes:</strong> perseguir, atacar, merodear, esquivar</li>
+          <li><strong>Esquivan asteroides</strong> de forma preventiva y urgente</li>
+          <li><strong>Disparan láseres</strong> que predicen tu movimiento</li>
+          <li><strong>3 puntos de vida</strong> - requieren múltiples impactos para ser destruidos</li>
+          <li><strong>Barra de vida</strong> visible sobre cada enemigo</li>
+          <li>Colores de estado: rojo (pánico), naranja (esquiva), amarillo (perseguir), cian (atacar), verde (merodear)</li>
         </ul>
       </div>
     </div>
@@ -86,4 +120,3 @@
   </footer>
 </body>
 </html>
-
