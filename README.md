@@ -96,9 +96,7 @@ Asteroides es una recreación mejorada del clásico arcade. Controlas una nave e
 2. Abre `game.html` con tu navegador
    - O usa un servidor local (recomendado):
      ```bash
-     npx serve
+     node server.js
      ```
 3. ¡Juega!
-
----
 
